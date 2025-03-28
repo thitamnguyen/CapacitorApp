@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hiển thị thời gian</title>
+    <script src="https://unpkg.com/@capacitor/core@latest/dist/capacitor.js"></script>
+    <script src="https://unpkg.com/@capacitor/local-notifications@latest/dist/plugin.js"></script>
+    <script src="https://unpkg.com/@capacitor/share@latest/dist/plugin.js"></script>
+    <script src="https://unpkg.com/@capacitor/camera@latest/dist/plugin.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            background: linear-gradient(to right, #8360c3, #2ebf91);
+            color: white;
+            padding: 50px;
+        }
+        .container {
+            max-width: 400px;
+            margin: auto;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+            background: white;
+            color: black;
+        }
+        h1 {
+            color: #333;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            background: #007BFF;
+            color: white;
+            cursor: pointer;
+            transition: background 0.3s, transform 0.2s;
+            margin-top: 10px;
+        }
+        button:hover {
+            background: #0056b3;
+            transform: scale(1.05);
+        }
+        #result {
+            font-size: 20px;
+            font-weight: bold;
+            margin-top: 15px;
+            color: #007BFF;
+        }
+        img {
+            display: block;
+            margin: 20px auto;
+            border-radius: 8px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🕒 Hiển thị thời gian</h1>
+        <button onclick="showTime()">⏳ Hiển thị thời gian</button>
+        <p id="result"></p>
+        <button onclick="shareTime()">📤 Chia sẻ thời gian</button>
+        <button onclick="takePhoto()">📷 Chụp ảnh</button>
+    </div>
+    <script>
+        async function showTime() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString();
+            document.getElementById('result').innerText = `⏰ Thời gian hiện tại: ${timeString}`;
+            
+            if (window.CapacitorLocalNotifications) {
+                await window.CapacitorLocalNotifications.requestPermissions();
+                await window.CapacitorLocalNotifications.schedule({
+                    notifications: [{
+                        title: "Thời gian hiện tại",
+                        body: `Bây giờ là ${timeString}`,
+                        id: 1,
+                        schedule: { at: new Date(Date.now() + 1000) }
+                    }]
+                });
+            } else if ("Notification" in window) {
+                Notification.requestPermission().then(permission => {
+                    if (permission === "granted") {
+                        new Notification("Thời gian hiện tại", { body: `Bây giờ là ${timeString}` });
+                    }
+                });
+            } else {
+                alert(`Bây giờ là: ${timeString}`);
+            }
+        }
+
+        async function shareTime() {
+            const text = document.getElementById("result").innerText;
+            try {
+                await Capacitor.Plugins.Share.share({
+                    title: "Chia sẻ thời gian",
+                    text: text,
+                    dialogTitle: "Chia sẻ thời gian"
+                });
+            } catch (error) {
+                console.error("Lỗi khi chia sẻ:", error);
+                alert("Không thể chia sẻ, vui lòng thử lại!");
+            }
+        }
+
+        async function takePhoto() {
+            try {
+                const image = await Capacitor.Plugins.Camera.getPhoto({
+                    quality: 90,
+                    allowEditing: false,
+                    resultType: "dataUrl"
+                });
+
+                // Hiển thị ảnh
+                const imgElement = document.createElement("img");
+                imgElement.src = image.dataUrl;
+                imgElement.style.width = "200px";
+                document.body.appendChild(imgElement);
+            } catch (error) {
+                console.error("Lỗi khi chụp ảnh:", error);
+                alert("Không thể chụp ảnh, vui lòng thử lại!");
+            }
+        }
+    </script>
+</body>
+</html>
